@@ -1,0 +1,87 @@
+#include <stdio.h>
+#include "pico/stdlib.h"
+
+// Definição dos pinos
+#define LED_VERDE_CARROS 2
+#define LED_AMARELO_CARROS 3
+#define LED_VERMELHO_CARROS 4
+#define LED_VERDE_PEDESTRES 5
+#define BOTAO_PEDESTRES 6
+#define BUZZER 7
+
+// Funções auxiliares
+void inicializar_pinos() {
+    // Configurar LEDs como saída
+    gpio_init(LED_VERDE_CARROS);
+    gpio_set_dir(LED_VERDE_CARROS, GPIO_OUT);
+
+    gpio_init(LED_AMARELO_CARROS);
+    gpio_set_dir(LED_AMARELO_CARROS, GPIO_OUT);
+
+    gpio_init(LED_VERMELHO_CARROS);
+    gpio_set_dir(LED_VERMELHO_CARROS, GPIO_OUT);
+
+    gpio_init(LED_VERDE_PEDESTRES);
+    gpio_set_dir(LED_VERDE_PEDESTRES, GPIO_OUT);
+
+    // Configurar buzzer como saída
+    gpio_init(BUZZER);
+    gpio_set_dir(BUZZER, GPIO_OUT);
+
+    // Configurar botão como entrada com pull-up
+    gpio_init(BOTAO_PEDESTRES);
+    gpio_set_dir(BOTAO_PEDESTRES, GPIO_IN);
+    gpio_pull_up(BOTAO_PEDESTRES);
+}
+
+void alternar_sinal_carros() {
+    gpio_put(LED_VERDE_CARROS, 1);
+    sleep_ms(8000); // 8 segundos
+    gpio_put(LED_VERDE_CARROS, 0);
+
+    gpio_put(LED_AMARELO_CARROS, 1);
+    sleep_ms(2000); // 2 segundos
+    gpio_put(LED_AMARELO_CARROS, 0);
+
+    gpio_put(LED_VERMELHO_CARROS, 1);
+    sleep_ms(10000); // 10 segundos
+    gpio_put(LED_VERMELHO_CARROS, 0);
+}
+
+void sinal_pedestre() {
+    // Fechar o trânsito dos carros
+    gpio_put(LED_AMARELO_CARROS, 1);
+    sleep_ms(5000); // 5 segundos
+    gpio_put(LED_AMARELO_CARROS, 0);
+
+    gpio_put(LED_VERMELHO_CARROS, 1);
+    gpio_put(LED_VERDE_PEDESTRES, 1);
+
+    // Ativar o buzzer intermitente
+    for (int i = 0; i < 15; i++) {
+        gpio_put(BUZZER, 1);
+        sleep_ms(500); // 0.5 segundos ligado
+        gpio_put(BUZZER, 0);
+        sleep_ms(500); // 0.5 segundos desligado
+    }
+
+    // Apagar LEDs após a travessia
+    gpio_put(LED_VERMELHO_CARROS, 0);
+    gpio_put(LED_VERDE_PEDESTRES, 0);
+}
+
+int main() {
+    stdio_init_all();
+    inicializar_pinos();
+
+    while (true) {
+        // Verificar se o botão foi pressionado
+        if (gpio_get(BOTAO_PEDESTRES) == 0) { // Botão pressionado
+            sinal_pedestre();
+        } else {
+            alternar_sinal_carros();
+        }
+    }
+
+    return 0;
+}
