@@ -1,87 +1,62 @@
-#include <stdio.h>
-#include "pico/stdlib.h"
+#define LED_VERDE_CARROS 2  // GPIO 2
+#define LED_AMARELO_CARROS 3  // GPIO 3
+#define LED_VERMELHO_CARROS 4  // GPIO 4
+#define LED_PEDESTRES 5  // GPIO 5
+#define BUZZER 6  // GPIO 6
+#define BOTAO_PEDESTRES 7  // GPIO 7
 
-// Definição dos pinos
-#define LED_VERDE_CARROS 2
-#define LED_AMARELO_CARROS 3
-#define LED_VERMELHO_CARROS 4
-#define LED_VERDE_PEDESTRES 5
-#define BOTAO_PEDESTRES 6
-#define BUZZER 7
-
-// Funções auxiliares
 void inicializar_pinos() {
-    // Configurar LEDs como saída
-    gpio_init(LED_VERDE_CARROS);
-    gpio_set_dir(LED_VERDE_CARROS, GPIO_OUT);
-
-    gpio_init(LED_AMARELO_CARROS);
-    gpio_set_dir(LED_AMARELO_CARROS, GPIO_OUT);
-
-    gpio_init(LED_VERMELHO_CARROS);
-    gpio_set_dir(LED_VERMELHO_CARROS, GPIO_OUT);
-
-    gpio_init(LED_VERDE_PEDESTRES);
-    gpio_set_dir(LED_VERDE_PEDESTRES, GPIO_OUT);
-
-    // Configurar buzzer como saída
-    gpio_init(BUZZER);
-    gpio_set_dir(BUZZER, GPIO_OUT);
-
-    // Configurar botão como entrada com pull-up
-    gpio_init(BOTAO_PEDESTRES);
-    gpio_set_dir(BOTAO_PEDESTRES, GPIO_IN);
-    gpio_pull_up(BOTAO_PEDESTRES);
+    pinMode(LED_VERDE_CARROS, OUTPUT);
+    pinMode(LED_AMARELO_CARROS, OUTPUT);
+    pinMode(LED_VERMELHO_CARROS, OUTPUT);
+    pinMode(LED_PEDESTRES, OUTPUT);
+    pinMode(BUZZER, OUTPUT);
+    pinMode(BOTAO_PEDESTRES, INPUT_PULLUP); // Pull-up para o botão
 }
 
-void alternar_sinal_carros() {
-    gpio_put(LED_VERDE_CARROS, 1);
-    sleep_ms(8000); // 8 segundos
-    gpio_put(LED_VERDE_CARROS, 0);
+void loop_semaforo() {
+    // Ciclo de semáforo normal
+    digitalWrite(LED_VERDE_CARROS, HIGH);
+    delay(8000);
+    digitalWrite(LED_VERDE_CARROS, LOW);
 
-    gpio_put(LED_AMARELO_CARROS, 1);
-    sleep_ms(2000); // 2 segundos
-    gpio_put(LED_AMARELO_CARROS, 0);
+    digitalWrite(LED_AMARELO_CARROS, HIGH);
+    delay(2000);
+    digitalWrite(LED_AMARELO_CARROS, LOW);
 
-    gpio_put(LED_VERMELHO_CARROS, 1);
-    sleep_ms(10000); // 10 segundos
-    gpio_put(LED_VERMELHO_CARROS, 0);
+    digitalWrite(LED_VERMELHO_CARROS, HIGH);
+    delay(10000);
+    digitalWrite(LED_VERMELHO_CARROS, LOW);
 }
 
-void sinal_pedestre() {
-    // Fechar o trânsito dos carros
-    gpio_put(LED_AMARELO_CARROS, 1);
-    sleep_ms(5000); // 5 segundos
-    gpio_put(LED_AMARELO_CARROS, 0);
+void loop_pedestre() {
+    // Quando o botão é pressionado
+    if (digitalRead(BOTAO_PEDESTRES) == LOW) {
+        digitalWrite(LED_AMARELO_CARROS, HIGH);
+        delay(5000);
+        digitalWrite(LED_AMARELO_CARROS, LOW);
 
-    gpio_put(LED_VERMELHO_CARROS, 1);
-    gpio_put(LED_VERDE_PEDESTRES, 1);
-
-    // Ativar o buzzer intermitente
-    for (int i = 0; i < 15; i++) {
-        gpio_put(BUZZER, 1);
-        sleep_ms(500); // 0.5 segundos ligado
-        gpio_put(BUZZER, 0);
-        sleep_ms(500); // 0.5 segundos desligado
-    }
-
-    // Apagar LEDs após a travessia
-    gpio_put(LED_VERMELHO_CARROS, 0);
-    gpio_put(LED_VERDE_PEDESTRES, 0);
-}
-
-int main() {
-    stdio_init_all();
-    inicializar_pinos();
-
-    while (true) {
-        // Verificar se o botão foi pressionado
-        if (gpio_get(BOTAO_PEDESTRES) == 0) { // Botão pressionado
-            sinal_pedestre();
-        } else {
-            alternar_sinal_carros();
+        digitalWrite(LED_VERMELHO_CARROS, HIGH);
+        digitalWrite(LED_PEDESTRES, HIGH);
+        for (int i = 0; i < 15; i++) { // Buzzer intermitente por 15 segundos
+            digitalWrite(BUZZER, HIGH);
+            delay(500);
+            digitalWrite(BUZZER, LOW);
+            delay(500);
         }
+        digitalWrite(LED_PEDESTRES, LOW);
+        digitalWrite(LED_VERMELHO_CARROS, LOW);
     }
+}
+
+void setup() {
+    inicializar_pinos();
+}
+
+void loop() {
+    loop_semaforo();
+    loop_pedestre();
+}
 
     return 0;
 }
